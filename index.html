@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CineLocal - Watch Your Movies</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header / Navigation -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="logo">
+        <span class="logo-icon">🍿</span>
+        <span class="logo-text">Cine<span class="highlight">Local</span></span>
+      </div>
+
+      <div class="search-box">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Search movies by title, year, quality..." autocomplete="off">
+        <button id="clearSearch" class="clear-btn" style="display: none;">&times;</button>
+      </div>
+
+      <div class="nav-actions">
+        <button id="refreshBtn" class="icon-btn" title="Rescan folder for new movies">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span class="btn-label">Refresh</span>
+        </button>
+        <div class="movie-count-badge" id="movieCount">0 Movies</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Spotlight Section -->
+  <section class="hero-section" id="heroSection" style="display: none;">
+    <div class="hero-backdrop" id="heroBackdrop"></div>
+    <div class="hero-content">
+      <div class="hero-tags" id="heroTags">
+        <span class="tag tag-featured">FEATURED</span>
+        <span class="tag tag-quality" id="heroQuality">HD</span>
+        <span class="tag tag-year" id="heroYear">2026</span>
+      </div>
+      <h1 class="hero-title" id="heroTitle">Movie Title</h1>
+      <p class="hero-meta" id="heroMeta">Size: 1.2 GB • Format: MKV</p>
+      <div class="hero-actions">
+        <button class="play-btn primary-btn" id="heroPlayBtn">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span>Watch Now</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Area -->
+  <main class="main-container">
+    <div class="section-header">
+      <h2 class="section-title">Your Movie Library</h2>
+      <div class="shortcuts-hint" id="shortcutsHintBtn" title="View keyboard shortcuts">
+        ⌨️ Shortcuts
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" id="emptyState" style="display: none;">
+      <div class="empty-icon">🎬</div>
+      <h3>No Movies Found</h3>
+      <p>Put your movie files (.mp4, .mkv, .webm) into this folder and click refresh!</p>
+    </div>
+
+    <!-- Movie Grid -->
+    <div class="movies-grid" id="moviesGrid">
+      <!-- Injected via JavaScript -->
+    </div>
+  </main>
+
+  <!-- Video Player Modal -->
+  <div class="player-modal" id="playerModal">
+    <div class="player-wrapper" id="playerWrapper">
+      <!-- Top Bar inside Player -->
+      <div class="player-topbar" id="playerTopbar">
+        <div class="player-movie-info">
+          <span class="playing-title" id="playerTitle">Movie Name</span>
+          <span class="playing-badges" id="playerBadges"></span>
+        </div>
+        <button class="close-player-btn" id="closePlayerBtn" title="Close Player (Esc)">&times;</button>
+      </div>
+
+      <!-- Resume Notification Toast -->
+      <div class="resume-toast" id="resumeToast" style="display: none;">
+        <span>You watched up to <strong id="resumeTimeStr">00:00</strong>. Resume?</span>
+        <div class="toast-actions">
+          <button class="toast-btn toast-resume" id="toastResumeBtn">Resume</button>
+          <button class="toast-btn toast-dismiss" id="toastRestartBtn">Start Over</button>
+        </div>
+      </div>
+
+      <!-- HTML5 Video Element -->
+      <video id="videoElement" playsinline preload="metadata">
+        <track id="subtitlesTrack" kind="subtitles" srclang="en" label="English" default>
+        Your browser does not support HTML5 video streaming.
+      </video>
+
+      <!-- Center Big Play Indicator on Tap/Click -->
+      <div class="center-play-feedback" id="centerFeedback">
+        <div class="feedback-icon" id="feedbackIcon">▶</div>
+      </div>
+
+      <!-- Custom Video Controls Overlay -->
+      <div class="custom-controls" id="customControls">
+        <!-- Progress Bar -->
+        <div class="progress-container" id="progressContainer">
+          <div class="progress-bar-hover-time" id="progressHoverTime">0:00</div>
+          <div class="progress-track">
+            <div class="progress-buffered" id="bufferedBar"></div>
+            <div class="progress-current" id="progressBar"></div>
+            <div class="progress-thumb"></div>
+          </div>
+        </div>
+
+        <!-- Controls Row -->
+        <div class="controls-row">
+          <div class="controls-left">
+            <!-- Play/Pause -->
+            <button class="ctrl-btn" id="playPauseBtn" title="Play/Pause (Space)">
+              <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <svg id="pauseIcon" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+            </button>
+
+            <!-- Rewind 10s -->
+            <button class="ctrl-btn" id="rewindBtn" title="Rewind 10s (Left Arrow)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"></path>
+              </svg>
+              <span class="ctrl-text">10</span>
+            </button>
+
+            <!-- Forward 10s -->
+            <button class="ctrl-btn" id="forwardBtn" title="Forward 10s (Right Arrow)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 17l5-5-5-5M6 17l5-5-5-5"></path>
+              </svg>
+              <span class="ctrl-text">10</span>
+            </button>
+
+            <!-- Volume -->
+            <div class="volume-container">
+              <button class="ctrl-btn" id="muteBtn" title="Mute/Unmute (M)">
+                <svg id="volHighIcon" viewBox="0 0 24 24" fill="currentColor"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                <svg id="volMuteIcon" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+              </button>
+              <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.05" value="1">
+            </div>
+
+            <!-- Time Display -->
+            <div class="time-display">
+              <span id="currentTime">00:00</span> / <span id="durationTime">00:00</span>
+            </div>
+          </div>
+
+          <div class="controls-right">
+            <!-- Speed Selector -->
+            <div class="speed-selector">
+              <button class="ctrl-btn speed-btn" id="speedBtn" title="Playback Speed">1x</button>
+              <div class="speed-menu" id="speedMenu">
+                <div class="speed-option" data-speed="0.5">0.5x</div>
+                <div class="speed-option" data-speed="0.75">0.75x</div>
+                <div class="speed-option active" data-speed="1.0">1.0x Normal</div>
+                <div class="speed-option" data-speed="1.25">1.25x</div>
+                <div class="speed-option" data-speed="1.5">1.5x</div>
+                <div class="speed-option" data-speed="2.0">2.0x</div>
+              </div>
+            </div>
+
+            <!-- Picture in Picture -->
+            <button class="ctrl-btn" id="pipBtn" title="Picture in Picture">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                <rect x="12" y="9" width="8" height="6" rx="1" fill="currentColor"></rect>
+              </svg>
+            </button>
+
+            <!-- Fullscreen -->
+            <button class="ctrl-btn" id="fullscreenBtn" title="Toggle Fullscreen (F)">
+              <svg id="fsEnterIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+              </svg>
+              <svg id="fsExitIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                <path d="M4 14h6m0 0v6m0-6l-7 7m17-11h-6m0 0V4m0 6l7-7M4 10h6m0 0V4m0 6L3 3m17 11h-6m0 0v6m0-6l7 7"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shortcuts Modal -->
+  <div class="modal-backdrop" id="shortcutsModal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Keyboard Shortcuts</h3>
+        <button class="close-btn" id="closeShortcutsBtn">&times;</button>
+      </div>
+      <div class="shortcuts-list">
+        <div class="shortcut-item"><kbd>Space</kbd> or <kbd>K</kbd> <span>Play / Pause</span></div>
+        <div class="shortcut-item"><kbd>→</kbd> / <kbd>←</kbd> <span>Jump Forward / Back 10s</span></div>
+        <div class="shortcut-item"><kbd>↑</kbd> / <kbd>↓</kbd> <span>Volume Up / Down</span></div>
+        <div class="shortcut-item"><kbd>F</kbd> <span>Toggle Fullscreen</span></div>
+        <div class="shortcut-item"><kbd>M</kbd> <span>Mute / Unmute</span></div>
+        <div class="shortcut-item"><kbd>Esc</kbd> <span>Close Player</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
